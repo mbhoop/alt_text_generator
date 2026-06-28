@@ -6,18 +6,23 @@ import pandas as pd
 import requests
 import ollama
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(level=logging.INFO,
+                    format="%(asctime)s - %(levelname)s - %(message)s")
 log = logging.getLogger(__name__)
 
+# /share/ftrscape/mbhoop/dataset/
 
-def load_dataset(csv_path: str = "/share/ftrscape/mbhoop/dataset/observations.csv") -> pd.DataFrame:
+def load_dataset(csv_path: str = "observations.csv") -> pd.DataFrame:
     """Load the dataset CSV into a pandas DataFrame."""
     # tab seperated csv
-    return pd.read_csv(csv_path, sep="\t")
+    return pd.read_csv(csv_path)
+
+# /share/ftrscape/mbhoop/alt-text-generator/
+
 
 def download_images(
     df: pd.DataFrame,
-    output_dir: str | os.PathLike = "/share/ftrscape/mbhoop/alt-text-generator/images",
+    output_dir: str | os.PathLike = "images",
     obs_id_col: str = "observation_id",
     photo_id_col: str = "photo_id",
 ) -> None:
@@ -37,8 +42,8 @@ def download_images(
         obs_id = row.get(obs_id_col)
         photo_id = row.get(photo_id_col)
 
-        # using image_key instead of obs_id and photo_id
-        filename = f"{row['image_key']}.jpg"
+        # using Image_name instead of obs_id and photo_id
+        filename = f"{row['Image_name']}.jpg"
         img_path = output_path / filename
 
         # Skip if already downloaded
@@ -72,25 +77,41 @@ def download_images(
             continue
 
         img_path.write_bytes(img_bytes)
-        log.info("Wrote %s to directory %s", filename, img_path.parent.resolve())
-    
+        log.info("Wrote %s to directory %s",
+                 filename, img_path.parent.resolve())
+
 
 
 PROMPT = "Generate a one sentence alt text for this image."
-image_dir = "/share/ftrscape/mbhoop/alt-text-generator/images"
-results_path = "/share/ftrscape/mbhoop/alt-text-generator/results/llava_results.csv"
+# /share/ftrscape/mbhoop/alt-text-generator/
+image_dir = "images"
+# /share/ftrscape/mbhoop/alt-text-generator/
+results_path = "results/llava_results.csv"
 
 def generate_alt(df):
-    results = []
+    done = set()
+    if Path(results_path).exists():
+        done = set(pd.read_csv(results_path)["Image_name"])
+    else:
+        pd.DataFrame(columns=["Image_name", "scientific_name", "llava_alt_text"]).to_csv(results_path, index=False)
+    
     for idx, row in df.iterrows():
-        img_path = Path(image_dir) / f"{row['image_key']}.jpg"
+        # Skip if already generated
+        if row["Image_name"] in done:
+            log.info("Skipping %s because alt text already exists", row["Image_name"])
+            continue
+
+        img_path = Path(image_dir) / f"{row['Image_name']}.jpg"
         response = ollama.chat(
-            model='llava', 
-            messages=[{"role": "user", "content": PROMPT, "images": [str(img_path)]}]
+            model='llava',
+            messages=[{"role": "user", "content": PROMPT,
+                       "images": [str(img_path)]}]
         )
-        results.append({"image_key": row["image_key"], "scientific_name": row["scientific_name"], "llava_alt_text": response["message"]["content"].strip()})
-        log.info("Done: %s", row['image_key'])
-    pd.DataFrame(results).to_csv(results_path, index=False)
+        result = {"Image_name": row["Image_name"], "scientific_name": row["scientific_name"],
+                  "llava_alt_text": response["message"]["content"].strip()}
+        pd.DataFrame([result]).to_csv(
+            results_path, mode='a', header=False, index=False)
+        log.info("Done: %s", row['Image_name'])
 
 
 if __name__ == "__main__":
@@ -100,4 +121,3 @@ if __name__ == "__main__":
     log.info("Image download complete.")
     generate_alt(df)
     log.info("Alt text generated!")
-
