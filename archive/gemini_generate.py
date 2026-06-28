@@ -1,23 +1,23 @@
+from dotenv import load_dotenv
 import logging
 import os
 from pathlib import Path
 
 import pandas as pd
 import requests
-import ollama
+from google import genai
+import PIL.Image
+
 
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s - %(levelname)s - %(message)s")
 log = logging.getLogger(__name__)
 
-# /share/ftrscape/mbhoop/dataset/
 
 def load_dataset(csv_path: str = "observations.csv") -> pd.DataFrame:
     """Load the dataset CSV into a pandas DataFrame."""
     # tab seperated csv
     return pd.read_csv(csv_path)
-
-# /share/ftrscape/mbhoop/alt-text-generator/
 
 
 def download_images(
@@ -81,34 +81,38 @@ def download_images(
                  filename, img_path.parent.resolve())
 
 
+load_dotenv()
+client = genai.Client()
 
 PROMPT = "Generate a one sentence alt text for this image."
-# /share/ftrscape/mbhoop/alt-text-generator/
+
 image_dir = "images"
-# /share/ftrscape/mbhoop/alt-text-generator/
-results_path = "results/llava_results.csv"
+results_path = "results/gemini_results.csv"
+
 
 def generate_alt(df):
     done = set()
     if Path(results_path).exists():
         done = set(pd.read_csv(results_path)["Image_name"])
     else:
-        pd.DataFrame(columns=["Image_name", "scientific_name", "llava_alt_text"]).to_csv(results_path, index=False)
-    
+        pd.DataFrame(columns=["Image_name", "scientific_name", "gemini_alt_text"]).to_csv(
+            results_path, indeax=False)
+
     for idx, row in df.iterrows():
         # Skip if already generated
         if row["Image_name"] in done:
-            log.info("Skipping %s because alt text already exists", row["Image_name"])
+            log.info("Skipping %s because alt text already exists",
+                     row["Image_name"])
             continue
 
         img_path = Path(image_dir) / f"{row['Image_name']}.jpg"
-        response = ollama.chat(
-            model='llava',
-            messages=[{"role": "user", "content": PROMPT,
-                       "images": [str(img_path)]}]
+        image = PIL.Image.open(img_path)
+        response = client.models.generate_content(
+            model="gemini-3.5-flash",
+            contents=[PROMPT, image],
         )
-        result = {"Image_name": row["Image_name"], "scientific_name": row["scientific_name"],
-                  "llava_alt_text": response["message"]["content"].strip()}
+        result = {"Image_name": row["Image_name"], "scientific_name": row["scientific_name"], "uri": row["uri"],
+                  "Image_url": row["medium_url"], "gemini_alt_text": response.text.strip(), "model": "gemini-3.5-flash"}
         pd.DataFrame([result]).to_csv(
             results_path, mode='a', header=False, index=False)
         log.info("Done: %s", row['Image_name'])
