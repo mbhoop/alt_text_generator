@@ -19,10 +19,10 @@ def load_dataset(csv_path: str = "observations.csv") -> pd.DataFrame:
 
 PROMPTS = {
     "prompt_01": "Generate a one sentence alt text for this image.",
-    "prompt_02": "...",
+    "prompt_02": "Write one concise alt-text sentence describing what is feeding on what",
 }
 
-PROMPT_NAME = "prompt_01"
+PROMPT_NAME = "prompt_02"
 PROMPT = PROMPTS[PROMPT_NAME]
 
 image_dir = "images"
@@ -31,17 +31,17 @@ results_path = f"results/{PROMPT_NAME}_results.csv"
 
 load_dotenv()
 models = [
-    ("gemini_2.5", init_chat_model("gemini-2.5-flash",
-     model_provider="google_genai"), "google"),
-    # ("sonnet_4.6", init_chat_model("claude-sonnet-4-6", model_provider="anthropic"), "anthropic"),
-    # ("llava", init_chat_model("llava", model_provider="ollama"), "ollama"),
+    # ("llava", init_chat_model("llava", model_provider="ollama")),
+    ("Qwen3.5-397B-A17B", init_chat_model("Qwen/Qwen3.5-397B-A17B", model_provider="together")),
+    # ("gemini-2.5-flash", init_chat_model("gemini-2.5-flash", model_provider="google_genai")),
+    # ("claude-sonnet-4-6", init_chat_model("claude-sonnet-4-6", model_provider="anthropic")),
 ]
 
 
-def message(provider, img_path):
+def message(label, img_path):
     data = base64.b64encode(Path(img_path).read_bytes()).decode()
     url = f"data:image/jpeg;base64,{data}"
-    image_url = url if provider == "ollama" else {"url": url}
+    image_url = url if label == "llava" else {"url": url}
     return [HumanMessage(content=[
         {"type": "text", "text": PROMPT},
         {"type": "image_url", "image_url": image_url},
@@ -71,11 +71,11 @@ def generate_alt(df):
             log.warning("%s missing", img_path)
             continue
 
-        for label, model, provider in models:
+        for label, model in models:
             if (name, label) in done:
                 continue
 
-            alt = text_of(model.invoke(message(provider, img_path))).strip()
+            alt = text_of(model.invoke(message(label, img_path))).strip()
             result = {"Image_name": name,
                       "image_url": row["medium_url"], "alt_text": alt, "model": label}
             pd.DataFrame([result]).to_csv(
