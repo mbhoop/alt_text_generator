@@ -6,24 +6,18 @@ import pandas as pd
 import base64
 from langchain.chat_models import init_chat_model
 from langchain_core.messages import HumanMessage
+from prompts import PROMPT, PROMPT_NAME
 
 
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s - %(levelname)s - %(message)s")
 log = logging.getLogger(__name__)
 
+
 def load_dataset(csv_path: str = "observations.csv") -> pd.DataFrame:
     return pd.read_csv(csv_path)
 
 
-
-PROMPTS = {
-    "prompt_01": "Generate a one sentence alt text for this image.",
-    "prompt_02": "Write one concise alt-text sentence describing what is feeding on what",
-}
-
-PROMPT_NAME = "prompt_02"
-PROMPT = PROMPTS[PROMPT_NAME]
 
 image_dir = "images"
 results_path = f"results/{PROMPT_NAME}_results.csv"
@@ -31,8 +25,9 @@ results_path = f"results/{PROMPT_NAME}_results.csv"
 
 load_dotenv()
 models = [
-    # ("llava", init_chat_model("llava", model_provider="ollama")),
-    ("Qwen3.5-397B-A17B", init_chat_model("Qwen/Qwen3.5-397B-A17B", model_provider="together")),
+    ("llava", init_chat_model("llava", model_provider="ollama")),
+    # ("Qwen3.5-397B-A17B", init_chat_model("Qwen/Qwen3.5-397B-A17B", model_provider="together")),
+    # ("Qwen/Qwen3-VL-8B-Instruct", init_chat_model("Qwen/Qwen3-VL-8B-Instruct", model_provider="vLLM")),
     # ("gemini-2.5-flash", init_chat_model("gemini-2.5-flash", model_provider="google_genai")),
     # ("claude-sonnet-4-6", init_chat_model("claude-sonnet-4-6", model_provider="anthropic")),
 ]
@@ -57,7 +52,6 @@ def text_of(response):
 def generate_alt(df):
     Path(results_path).parent.mkdir(exist_ok=True)
 
-    # What's already done: the set of (image, model) pairs in the file.
     done = set()
     if Path(results_path).exists():
         prev = pd.read_csv(results_path)
@@ -99,5 +93,5 @@ def build_comparison_table():
 if __name__ == "__main__":
     df = load_dataset()
     generate_alt(df)
-    log.info("Alt text generated!")
+    log.info("Alt text generated for all images!")
     build_comparison_table()
