@@ -1,39 +1,24 @@
-from dotenv import load_dotenv
+import base64
 import logging
 from pathlib import Path
 
 import pandas as pd
-import base64
-from langchain.chat_models import init_chat_model
+from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage
-from prompts import PROMPT, PROMPT_NAME
+from .utils import load_dataset 
 
+from config import (
+    PROMPT,
+    IMAGE_DIR,
+    SAMPLE_PATH,
+    RESULTS_PATH,
+    COMPARISON_PATH,
+    load_models,
+)
 
-logging.basicConfig(level=logging.INFO,
-                    format="%(asctime)s - %(levelname)s - %(message)s")
 log = logging.getLogger(__name__)
 
-
-def load_dataset(csv_path: str = "sample_3x.csv") -> pd.DataFrame:
-    return pd.read_csv(csv_path)
-
-
-SAMPLE_NAME = "sample_3x"
-
-image_dir = "images"
-sample_path = f"{SAMPLE_NAME}.csv"
-results_path = f"results/{PROMPT_NAME}_{SAMPLE_NAME}_results.csv"
-
-
 load_dotenv()
-models = [
-    ("llava", init_chat_model("llava", model_provider="ollama")),
-    # ("Qwen3.5-397B-A17B", init_chat_model("Qwen/Qwen3.5-397B-A17B", model_provider="together")),
-    # ("Qwen/Qwen3-VL-8B-Instruct", init_chat_model("Qwen/Qwen3-VL-8B-Instruct", model_provider="vLLM")),
-    # ("gemini-3.5-flash", init_chat_model("gemini-3.5-flash", model_provider="google_genai")),
-    # ("gemini-2.5-flash", init_chat_model("gemini-2.5-flash", model_provider="google_genai")),
-    # ("claude-sonnet-4-6", init_chat_model("claude-sonnet-4-6", model_provider="anthropic")),
-]
 
 
 def message(label, img_path):
@@ -45,24 +30,26 @@ def message(label, img_path):
         {"type": "image_url", "image_url": image_url},
     ])]
 
-
+# normalizes langchain's response.content to a plain string
 def text_of(response):
     c = response.content
+    # concatenate the text
     return c if isinstance(c, str) else "".join(
         b.get("text", "") if isinstance(b, dict) else str(b) for b in c)
 
 
-def generate_alt(df):
-    Path(results_path).parent.mkdir(exist_ok=True)
+def generate_alt(df, models):
+    Path(RESULTS_PATH).parent.mkdir(exist_ok=True)
 
+    # Resume support: skip any (image, model) pair already in the results
     done = set()
-    if Path(results_path).exists():
-        prev = pd.read_csv(results_path)
+    if Path(RESULTS_PATH).exists():
+        prev = pd.read_csv(RESULTS_PATH)
         done = set(zip(prev["Image_name"], prev["model"]))
 
     for _, row in df.iterrows():
         name = row["Image_name"]
-        img_path = Path(image_dir) / f"{name}.jpg"
+        img_path = Path(IMAGE_DIR) / f"{name}.jpg"
 
         if not img_path.exists():
             log.warning("%s missing", img_path)
@@ -76,25 +63,26 @@ def generate_alt(df):
             result = {"Image_name": name,
                       "image_url": row["medium_url"], "alt_text": alt, "model": label}
             pd.DataFrame([result]).to_csv(
-                results_path, mode="a", index=False,
-                header=not Path(results_path).exists())
+                RESULTS_PATH, mode="a", index=False,
+                header=not Path(RESULTS_PATH).exists())
             done.add((name, label))
             log.info("Done: %s / %s", name, label)
 
 
 def build_comparison_table():
     wide = (
-        pd.read_csv(results_path)
+        pd.read_csv(RESULTS_PATH)
         .pivot(index=["Image_name", "image_url"],
                columns="model",
                values="alt_text")
         .reset_index()
     )
-    wide.to_csv(f"results/{PROMPT_NAME}_{SAMPLE_NAME}_comparison.csv", index=False)
+    wide.to_csv(COMPARISON_PATH, index=False)
 
 
 if __name__ == "__main__":
-    df = load_dataset()
-    generate_alt(df)
+    models = load_models()
+    df = load_dataset(SAMPLE_PATH)
+    generate_alt(df, models)
     log.info("Alt text generated for all images!")
     build_comparison_table()

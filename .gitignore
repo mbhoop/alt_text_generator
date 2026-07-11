@@ -216,8 +216,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
-
 images/
 .env
-BioVerify/
-.DS_Store
+reference/
