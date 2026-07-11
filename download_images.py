@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.INFO,
 log = logging.getLogger(__name__)
 
 
-def load_dataset(csv_path: str = "observations.csv") -> pd.DataFrame:
+def load_dataset(csv_path: str = "sample_3x.csv") -> pd.DataFrame:
     """Load the dataset CSV into a pandas DataFrame."""
     return pd.read_csv(csv_path)
 

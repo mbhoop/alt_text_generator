@@ -14,13 +14,15 @@ logging.basicConfig(level=logging.INFO,
 log = logging.getLogger(__name__)
 
 
-def load_dataset(csv_path: str = "observations.csv") -> pd.DataFrame:
+def load_dataset(csv_path: str = "sample_3x.csv") -> pd.DataFrame:
     return pd.read_csv(csv_path)
 
 
+SAMPLE_NAME = "sample_3x"
 
 image_dir = "images"
-results_path = f"results/{PROMPT_NAME}_results.csv"
+sample_path = f"{SAMPLE_NAME}.csv"
+results_path = f"results/{PROMPT_NAME}_{SAMPLE_NAME}_results.csv"
 
 
 load_dotenv()
@@ -28,6 +30,7 @@ models = [
     ("llava", init_chat_model("llava", model_provider="ollama")),
     # ("Qwen3.5-397B-A17B", init_chat_model("Qwen/Qwen3.5-397B-A17B", model_provider="together")),
     # ("Qwen/Qwen3-VL-8B-Instruct", init_chat_model("Qwen/Qwen3-VL-8B-Instruct", model_provider="vLLM")),
+    # ("gemini-3.5-flash", init_chat_model("gemini-3.5-flash", model_provider="google_genai")),
     # ("gemini-2.5-flash", init_chat_model("gemini-2.5-flash", model_provider="google_genai")),
     # ("claude-sonnet-4-6", init_chat_model("claude-sonnet-4-6", model_provider="anthropic")),
 ]
@@ -87,7 +90,7 @@ def build_comparison_table():
                values="alt_text")
         .reset_index()
     )
-    wide.to_csv(f"results/{PROMPT_NAME}_comparison.csv", index=False)
+    wide.to_csv(f"results/{PROMPT_NAME}_{SAMPLE_NAME}_comparison.csv", index=False)
 
 
 if __name__ == "__main__":
