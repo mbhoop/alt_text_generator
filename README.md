@@ -1,6 +1,6 @@
 # AI Alt Text Generation
 
-Evaluating whether vision-language models can generate accurate, accessibility-focused alt text for crowd-sourced ecological observations.
+Evaluating the capabilities of vision-language models to generate accurate, accessibility-focused alt text for crowd-sourced ecological observations.
 
 <!-- icons -->
 ![Python](https://img.shields.io/badge/Python-3.11-blue)
@@ -18,7 +18,7 @@ Evaluating whether vision-language models can generate accurate, accessibility-f
 - [Pipeline](#pipeline)
 - [Setup](#setup)
 - [Evaluation](#evaluation)
-- [Key Findings](#key-findings)
+- [Key Results](#key-results)
 - [Limitations](#limitations)
 - [Future Scope](#future-scope)
 - [Contributors](#contributors)
@@ -28,7 +28,7 @@ Citizen science platforms such as iNaturalist contain thousands of biodiversity 
 
 This project explores whether modern vision-language models (VLMs) can help close that accessibility gap. It evaluates how reliably models can identify species and produce alt text that captures feeding interactions in real-world ecological observations.
 
-The work was developed to support the Who-Eats-Whom project, an iNaturalist-based platform for exploring predator–prey relationships. alt-text-generator generates alt text describing the feeding interaction in each observation and evaluates its quality using an LLM judge. Beyond improving accessibility for one application, this research serves to better understand the role of VLMs in generating domain-specific, accessibility-focused alt-text at scale.
+The work was developed to support the **Who-Eats-Whom** project, an iNaturalist-based platform for exploring predator–prey relationships. alt-text-generator generates alt text describing the feeding interaction in each observation and evaluates its quality using an LLM judge. Beyond improving accessibility for one application, this research serves to better understand the role of VLMs in generating domain-specific, accessibility-focused alt-text at scale.
 
 ## Key Results
 #### Scores by Sample Size
@@ -133,9 +133,11 @@ results/04_renderings
 
 
 ## Setup
-`git clone https://github.com/mbhoop/alt-text-generator.git`
-`cd alt-text-generator`
-`pip install -r requirements.txt`
+```bash
+git clone https://github.com/mbhoop/alt-text-generator.git
+cd alt-text-generator
+pip install -r requirements.txt
+```
 
 Load API keys for the models as outlined in `.env.example`.
 
