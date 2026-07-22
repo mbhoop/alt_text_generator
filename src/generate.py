@@ -41,7 +41,7 @@ def text_of(response):
 def generate_alt(df, models):
     Path(RESULTS_PATH).parent.mkdir(exist_ok=True)
 
-    # Resume support: skip any (image, model) pair already in the results
+    # resume support: skip any (image, model) pair already in the results
     done = set()
     if Path(RESULTS_PATH).exists():
         prev = pd.read_csv(RESULTS_PATH)
@@ -68,7 +68,7 @@ def generate_alt(df, models):
             done.add((name, label))
             log.info("Done: %s / %s", name, label)
 
-
+# builds wide layout of results for better readability
 def build_comparison_table():
     wide = (
         pd.read_csv(RESULTS_PATH)

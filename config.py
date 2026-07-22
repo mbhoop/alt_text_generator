@@ -3,7 +3,7 @@ from prompts import PROMPTS
 
 # edit as per run
 PROMPT_NAME = "prompt_03"                 
-SAMPLE_NAME = "sample_3x"                 
+SAMPLE_NAME = "sample_3x_research_grade"                 
 ACTIVE_MODELS = ["gemini-3.5-flash"]   
 JUDGE_MODEL = "claude-opus-4-8"
 
@@ -18,12 +18,21 @@ MODEL_REGISTRY = {
 PROMPT = PROMPTS[PROMPT_NAME]
 IMAGE_DIR = "images"
 SAMPLE_PATH = f"data/{SAMPLE_NAME}.csv"
-RESULTS_PATH = f"results/{PROMPT_NAME}_{SAMPLE_NAME}_results.csv"
-COMPARISON_PATH = f"results/{PROMPT_NAME}_{SAMPLE_NAME}_comparison.csv"
-EVAL_PATH = f"results/{PROMPT_NAME}_{SAMPLE_NAME}_evaluations.csv"
-EVAL_HTML_PATH = f"results/{PROMPT_NAME}_{SAMPLE_NAME}_evaluations.html"
 
-def load_models():    
+# file naming convention
+PROMPT_TAG = "p" + PROMPT_NAME.split("_")[-1]
+SAMPLE_TAG = SAMPLE_NAME.split("_")[-1]
+STEM = f"{PROMPT_TAG}_{SAMPLE_TAG}"
+
+# file paths for results pipeline
+RESULTS_PATH    = f"results/01_raw/{STEM}_results.csv"
+COMPARISON_PATH = f"results/02_comparisons/{STEM}_comp.csv"
+EVAL_PATH       = f"results/03_evaluations/{STEM}_eval.csv"
+EVAL_HTML_PATH  = f"results/04_renderings/{STEM}_eval.html"
+CONF_EVAL_PATH  = f"results/03_evaluations/{STEM}_confidence_eval.csv"
+CONF_HTML_PATH  = f"results/04_renderings/{STEM}_confidence_eval.html"
+
+def load_models():
     return [(name, MODEL_REGISTRY[name]()) for name in ACTIVE_MODELS]
 
 def load_judge():    
